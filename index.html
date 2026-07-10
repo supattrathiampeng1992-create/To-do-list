@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S.H.I.E.L.D. Mission Tracker</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Mitr:wght@300;400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #1a1c29 0%, #0c0d14 100%);
+            color: #fff;
+            font-family: 'Mitr', sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background: rgba(20, 24, 38, 0.85);
+            padding: 30px;
+            border-radius: 16px;
+            border: 2px solid #e23636; /* Marvel Red */
+            box-shadow: 0 0 25px rgba(226, 54, 54, 0.3), inset 0 0 15px rgba(0, 212, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Marvel Logo Header */
+        .header-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .marvel-badge {
+            background-color: #e23636;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 32px;
+            letter-spacing: 4px;
+            padding: 5px 20px;
+            display: inline-block;
+            transform: skewX(-10deg);
+            box-shadow: 4px 4px 0px #f39c12;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            color: #51e2f5;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 5px;
+        }
+
+        /* Stark Industries Form */
+        .todo-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(81, 226, 245, 0.3);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: #a0aec0;
+        }
+
+        input {
+            padding: 12px;
+            background: rgba(12, 13, 20, 0.8);
+            border: 1px solid #4a5568;
+            border-radius: 6px;
+            font-size: 15px;
+            color: white;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            border-color: #51e2f5;
+            box-shadow: 0 0 10px rgba(81, 226, 245, 0.5);
+        }
+
+        /* Marvel Buttons */
+        button {
+            cursor: pointer;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, #e23636 0%, #b81d1d 100%);
+            color: white;
+            grid-column: span 3;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 10px rgba(226, 54, 54, 0.4);
+        }
+
+        .btn-add:hover {
+            background: linear-gradient(135deg, #ff4747 0%, #e23636 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(226, 54, 54, 0.6);
+        }
+
+        /* Mission List Item */
+        .task-list {
+            list-style: none;
+        }
+
+        .task-item {
+            background: rgba(26, 32, 44, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        /* THanos / Code Red Alert (ใกล้กำหนดส่งหรือเลยกำหนด) */
+        .task-item.urgent {
+            border-left: 6px solid #e23636;
+            background: linear-gradient(90deg, rgba(226, 54, 54, 0.15) 0%, rgba(26, 32, 44, 0.8) 100%);
+            box-shadow: 0 0 15px rgba(226, 54, 54, 0.2);
+            animation: pulse-border 2s infinite;
+        }
+
+        /* Normal Mission Status */
+        .task-item.normal {
+            border-left: 6px solid #00d4ff;
+            background: linear-gradient(90deg, rgba(0, 212, 255, 0.08) 0%, rgba(26, 32, 44, 0.8) 100%);
+        }
+
+        @keyframes pulse-border {
+            0% { border-left-color: #e23636; }
+            50% { border-left-color: #ff8e8e; }
+            100% { border-left-color: #e23636; }
+        }
+
+        .task-details h3 {
+            color: #fff;
+            font-size: 18px;
+            margin-bottom: 6px;
+        }
+
+        .task-details .subject-badge {
+            background: rgba(81, 226, 245, 0.2);
+            color: #51e2f5;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-right: 8px;
+            border: 1px solid rgba(81, 226, 245, 0.4);
+        }
+
+        .task-details p {
+            font-size: 14px;
+            color: #a0aec0;
+            margin-top: 5px;
+        }
+
+        .countdown {
+            font-weight: bold;
+            font-family: 'Orbitron', sans-serif;
+            margin-top: 8px !important;
+        }
+
+        .task-item.urgent .countdown {
+            color: #ff4747;
+            text-shadow: 0 0 5px rgba(255, 71, 71, 0.5);
+        }
+
+        .task-item.normal .countdown {
+            color: #00d4ff;
+        }
+
+        /* Action Buttons */
+        .actions button {
+            padding: 8px 14px;
+            font-size: 14px;
+            margin-left: 8px;
+            font-family: 'Mitr', sans-serif;
+        }
+
+        .btn-edit {
+            background-color: #f39c12; /* ทอง Armor Gold */
+            color: #000;
+            font-weight: 500;
+        }
+
+        .btn-edit:hover {
+            background-color: #f1c40f;
+            transform: scale(1.05);
+        }
+
+        .btn-delete {
+            background-color: transparent;
+            color: #a0aec0;
+            border: 1px solid #4a5568;
+        }
+
+        .btn-delete:hover {
+            background-color: #e23636;
+            color: white;
+            border-color: #e23636;
+            transform: scale(1.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 700px) {
+            .todo-form {
+                grid-template-columns: 1fr;
+            }
+            .btn-add {
+                grid-column: span 1;
+            }
+            .task-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .actions {
+                width: 100%;
+                display: flex;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-container">
+        <div class="marvel-badge">MARVEL</div>
+        <h1>MISSION EMERGENCY TRACKER</h1>
+    </div>
+
+    <!-- ฟอร์มสไตล์ Stark Industries -->
+    <div class="todo-form">
+        <input type="hidden" id="task-id">
+        <div class="form-group">
+            <label for="subject">🚀 รหัสวิชา / กลุ่มภารกิจ</label>
+            <input type="text" id="subject" placeholder="เช่น LAB-PHYSICS, MATH">
+        </div>
+        <div class="form-group">
+            <label for="task-name">💥 ชื่อภารกิจ (งานที่ต้องทำ)</label>
+            <input type="text" id="task-name" placeholder="เช่น รายงานส่งอเวนเจอร์ส">
+        </div>
+        <div class="form-group">
+            <label for="deadline">⏳ เดดไลน์สิ้นสุดภารกิจ</label>
+            <input type="datetime-local" id="deadline">
+        </div>
+        <button class="btn-add" id="btn-submit" onclick="saveTask()">⚡ มอบหมายภารกิจใหม่</button>
+    </div>
+
+    <!-- รายงานผลภารกิจ -->
+    <ul class="task-list" id="task-list"></ul>
+</div>
+
+<script>
+    let tasks = JSON.parse(localStorage.getItem('marvel_tasks')) || [];
+    let editId = null;
+
+    // บันทึกภารกิจ (เพิ่มใหม่/แก้ไข)
+    function saveTask() {
+        const subject = document.getElementById('subject').value.trim();
+        const taskName = document.getElementById('task-name').value.trim();
+        const deadline = document.getElementById('deadline').value;
+
+        if (!subject || !taskName || !deadline) {
+            alert('J.A.R.V.I.S.: กรุณาระบุรายละเอียดภารกิจให้ครบถ้วนครับกัปตัน!');
+            return;
+        }
+
+        if (editId) {
+            // อัปเดตข้อมูลชุดเดิม
+            tasks = tasks.map(task => {
+                if (task.id === editId) {
+                    return { ...task, subject, taskName, deadline };
+                }
+                return task;
+            });
+            document.getElementById('btn-submit').innerText = '⚡ มอบหมายภารกิจใหม่';
+            document.getElementById('btn-submit').style.background = 'linear-gradient(135deg, #e23636 0%, #b81d1d 100%)';
+            editId = null;
+        } else {
+            // สร้างภารกิจใหม่
+            const newTask = {
+                id: Date.now().toString(),
+                subject,
+                taskName,
+                deadline
+            };
+            tasks.push(newTask);
+        }
+
+        localStorage.setItem('marvel_tasks', JSON.stringify(tasks));
+        resetForm();
+        renderTasks();
+    }
+
+    // แสดงผลบนบอร์ด
+    function renderTasks() {
+        const taskList = document.getElementById('task-list');
+        taskList.innerHTML = '';
+
+        if (tasks.length === 0) {
+            taskList.innerHTML = '<p style="text-align:center; color:#a0aec0; padding: 20px;">โลกสงบสุขแล้ว... ไม่มีภารกิจค้างคาในขณะนี้! 🛡️</p>';
+            return;
+        }
+
+        // เรียงลำดับตามเวลาวิกฤต (งานเดดไลน์ใกล้สุดอยู่บน)
+        tasks.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+
+        tasks.forEach(task => {
+            const now = new Date().getTime();
+            const taskDeadline = new Date(task.deadline).getTime();
+            const timeDiff = taskDeadline - now;
+
+            // ตรวจสอบว่าวิกฤตหรือยัง (น้อยกว่า 24 ชั่วโมง)
+            const isUrgent = timeDiff <= 24 * 60 * 60 * 1000; 
+            const statusClass = isUrgent ? 'urgent' : 'normal';
+
+            const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            const formattedDate = new Date(task.deadline).toLocaleDateString('th-TH', options);
+
+            const li = document.createElement('li');
+            li.className = `task-item ${statusClass}`;
+            li.innerHTML = `
+                <div class="task-details">
+                    <h3><span class="subject-badge">${task.subject}</span>${task.taskName}</h3>
+                    <p>📅 กำหนดส่ง: ${formattedDate}</p>
+                    <p class="countdown">${getCountdownText(timeDiff)}</p>
+                </div>
+                <div class="actions">
+                    <button class="btn-edit" onclick="editTask('${task.id}')">✏️ ปรับแผน</button>
+                    <button class="btn-delete" onclick="deleteTask('${task.id}')">❌ เคลียร์</button>
+                </div>
+            `;
+            taskList.appendChild(li);
+        });
+    }
+
+    // คำนวณรหัสนับถอยหลังสไตล์จักรวาลมาร์เวล
+    function getCountdownText(timeDiff) {
+        if (timeDiff < 0) {
+            return "💥 MISSION FAILED: เลยกำหนดส่งแล้ว!";
+        }
+        const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+
+        let text = "⏱️ เวลาที่เหลือ: ";
+        if (days > 0) text += `${days} วัน `;
+        if (hours > 0) text += `${hours} ชม. `;
+        text += `${minutes} นาที`;
+
+        if (days === 0 && hours < 24) {
+            text += " 🔥 [🚨 CODE RED: ใกล้เดดไลน์!]";
+        }
+        return text;
+    }
+
+    // แก้ไขข้อมูลภารกิจ
+    function editTask(id) {
+        const task = tasks.find(t => t.id === id);
+        if (task) {
+            document.getElementById('subject').value = task.subject;
+            document.getElementById('task-name').value = task.taskName;
+            document.getElementById('deadline').value = task.deadline;
+            
+            editId = id;
+            document.getElementById('btn-submit').innerText = '💾 ยืนยันแผนการรบใหม่';
+            document.getElementById('btn-submit').style.background = 'linear-gradient(135deg, #f39c12 0%, #d69e2e 100%)';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
+    // ลบข้อมูลภารกิจ
+    function deleteTask(id) {
+        if (confirm('J.A.R.V.I.S.: คุณต้องการลบภารกิจนี้ออกจากฐานข้อมูลใช่หรือไม่?')) {
+            tasks = tasks.filter(task => task.id !== id);
+            localStorage.setItem('marvel_tasks', JSON.stringify(tasks));
+            renderTasks();
+        }
+    }
+
+    // รีเซ็ตฟอร์ม
+    function resetForm() {
+        document.getElementById('subject').value = '';
+        document.getElementById('task-name').value = '';
+        document.getElementById('deadline').value = '';
+        editId = null;
+    }
+
+    // อัปเดตตารางเวลาอัตโนมัติทุกๆ 1 นาที
+    setInterval(renderTasks, 60000);
+    window.onload = renderTasks;
+</script>
+
+</body>
+  </html>
+  
