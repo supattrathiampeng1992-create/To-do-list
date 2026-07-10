@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบันทึกและแจ้งเตือน To-Do List การเรียน</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #2c3e50;
+        }
+
+        /* Form Style */
+        .todo-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: span 3;
+        }
+
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #4a5568;
+        }
+
+        input {
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #3182ce;
+        }
+
+        button {
+            cursor: pointer;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+
+        .btn-add {
+            background-color: #3182ce;
+            color: white;
+            grid-column: span 3;
+        }
+
+        .btn-add:hover {
+            background-color: #2b6cb0;
+        }
+
+        /* List Style */
+        .task-list {
+            list-style: none;
+        }
+
+        .task-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.3s;
+        }
+
+        /* สถานะการแจ้งเตือนตามเวลา */
+        .task-item.urgent {
+            border-left: 6px solid #e53e3e; /* แดง - ใกล้ส่ง/เลยกำหนด */
+            background-color: #fff5f5;
+        }
+
+        .task-item.normal {
+            border-left: 6px solid #3182ce; /* ฟ้า - เวลาเหลือเยอะ */
+        }
+
+        .task-details h3 {
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .task-details p {
+            font-size: 14px;
+            color: #718096;
+            margin-bottom: 3px;
+        }
+
+        .countdown {
+            font-weight: bold;
+            color: #e53e3e;
+        }
+
+        .actions button {
+            padding: 8px 12px;
+            font-size: 14px;
+            margin-left: 5px;
+        }
+
+        .btn-edit {
+            background-color: #ecc94b;
+            color: #744210;
+        }
+
+        .btn-edit:hover {
+            background-color: #d69e2e;
+        }
+
+        .btn-delete {
+            background-color: #e53e3e;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background-color: #c53030;
+        }
+
+        @media (max-width: 600px) {
+            .todo-form {
+                grid-template-columns: 1fr;
+            }
+            .form-group.full-width, .btn-add {
+                grid-column: span 1;
+            }
+            .task-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .actions {
+                width: 100%;
+                display: flex;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📝 To-Do List ติดตามงานเรียน</h1>
+
+    <!-- ฟอร์มกรอกข้อมูล / แก้ไขข้อมูล -->
+    <div class="todo-form">
+        <input type="hidden" id="task-id">
+        <div class="form-group">
+            <label for="subject">📘 วิชา</label>
+            <input type="text" id="subject" placeholder="เช่น คณิตศาสตร์, ENG">
+        </div>
+        <div class="form-group">
+            <label for="task-name">📝 ชื่องาน</label>
+            <input type="text" id="task-name" placeholder="เช่น การบ้านบทที่ 1">
+        </div>
+        <div class="form-group">
+            <label for="deadline">⏰ วันที่และเวลาส่ง</label>
+            <input type="datetime-local" id="deadline">
+        </div>
+        <button class="btn-add" id="btn-submit" onclick="saveTask()">➕ เพิ่มงานใหม่</button>
+    </div>
+
+    <!-- รายการงานทั้งหมด -->
+    <ul class="task-list" id="task-list"></ul>
+</div>
+
+<script>
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    let editId = null;
+
+    // ฟังก์ชันบันทึกข้อมูล (ทั้งเพิ่มใหม่และแก้ไข)
+    function saveTask() {
+        const subject = document.getElementById('subject').value.trim();
+        const taskName = document.getElementById('task-name').value.trim();
+        const deadline = document.getElementById('deadline').value;
+
+        if (!subject || !taskName || !deadline) {
+            alert('กรุณากรอกข้อมูลให้ครบถ้วนทุกช่องครับ!');
+            return;
+        }
+
+        if (editId) {
+            // โหมดแก้ไขข้อมูล
+            tasks = tasks.map(task => {
+                if (task.id === editId) {
+                    return { ...task, subject, taskName, deadline };
+                }
+                return task;
+            });
+            document.getElementById('btn-submit').innerText = '➕ เพิ่มงานใหม่';
+            document.getElementById('btn-submit').style.backgroundColor = '#3182ce';
+            editId = null;
+        } else {
+            // โหมดเพิ่มงานใหม่
+            const newTask = {
+                id: Date.now().toString(),
+                subject,
+                taskName,
+                deadline
+            };
+            tasks.push(newTask);
+        }
+
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        resetForm();
+        renderTasks();
+    }
+
+    // ฟังก์ชันดึงข้อมูลมาแสดงบนหน้าเว็บ
+    function renderTasks() {
+        const taskList = document.getElementById('task-list');
+        taskList.innerHTML = '';
+
+        if (tasks.length === 0) {
+            taskList.innerHTML = '<p style="text-align:center; color:#aaa;">ไม่มีงานค้างแล้ว ยินดีด้วย! 🎉</p>';
+            return;
+        }
+
+        // เรียงลำดับงานตามวันที่ส่ง (งานที่ใกล้ส่งที่สุดขึ้นก่อน)
+        tasks.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+
+        tasks.forEach(task => {
+            const now = new Date().getTime();
+            const taskDeadline = new Date(task.deadline).getTime();
+            const timeDiff = taskDeadline - now;
+
+            // ตรวจสอบว่าใกล้กำหนดส่ง (ภายใน 24 ชั่วโมง) หรือยัง
+            const isUrgent = timeDiff <= 24 * 60 * 60 * 1000; 
+            const statusClass = isUrgent ? 'urgent' : 'normal';
+
+            // จัดฟอร์แมตวันที่แสดงผลให้สวยงาม
+            const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            const formattedDate = new Date(task.deadline).toLocaleDateString('th-TH', options);
+
+            const li = document.createElement('li');
+            li.className = `task-item ${statusClass}`;
+            li.innerHTML = `
+                <div class="task-details">
+                    <h3>[${task.subject}] ${task.taskName}</h3>
+                    <p>📅 กำหนดส่ง: ${formattedDate}</p>
+                    <p class="countdown" id="count-${task.id}">${getCountdownText(timeDiff)}</p>
+                </div>
+                <div class="actions">
+                    <button class="btn-edit" onclick="editTask('${task.id}')">✏️ แก้ไข</button>
+                    <button class="btn-delete" onclick="deleteTask('${task.id}')">❌ ลบ</button>
+                </div>
+            `;
+            taskList.appendChild(li);
+        });
+    }
+
+    // ฟังก์ชันคำนวณเวลานับถอยหลัง
+    function getCountdownText(timeDiff) {
+        if (timeDiff < 0) {
+            return "⚠️ เลยกำหนดส่งแล้ว!";
+        }
+        const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+
+        let text = "⏳ เหลือเวลา: ";
+        if (days > 0) text += `${days} วัน `;
+        if (hours > 0) text += `${hours} ชม. `;
+        text += `${minutes} นาที`;
+
+        if (days === 0 && hours < 24) {
+            text += " 🔥 (ด่วนมาก!)";
+        }
+        return text;
+    }
+
+    // ฟังก์ชันเลือกงานมาแก้ไข
+    function editTask(id) {
+        const task = tasks.find(t => t.id === id);
+        if (task) {
+            document.getElementById('subject').value = task.subject;
+            document.getElementById('task-name').value = task.taskName;
+            document.getElementById('deadline').value = task.deadline;
+            
+            editId = id;
+            document.getElementById('btn-submit').innerText = '💾 บันทึกการแก้ไข';
+            document.getElementById('btn-submit').style.backgroundColor = '#d69e2e';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
+    // ฟังก์ชันลบงาน
+    function deleteTask(id) {
+        if (confirm('คุณต้องการลบงานนี้ใช่หรือไม่?')) {
+            tasks = tasks.filter(task => task.id !== id);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            renderTasks();
+        }
+    }
+
+    // ฟังก์ชันล้างฟอร์มกรอกข้อมูล
+    function resetForm() {
+        document.getElementById('subject').value = '';
+        document.getElementById('task-name').value = '';
+        document.getElementById('deadline').value = '';
+        editId = null;
+    }
+
+    // อัปเดตเวลานับถอยหลังทุกๆ 1 นาที
+    setInterval(renderTasks, 60000);
+
+    // โหลดข้อมูลครั้งแรกเมื่อเปิดหน้าเว็บ
+    window.onload = renderTasks;
+</script>
+
+</body>
+</html>
